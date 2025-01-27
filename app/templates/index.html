@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block title %}🏠 首页 - {{ config.SITE_NAME }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+        <h1>🍳 {{ config.SITE_NAME }}</h1>
+            <button id="adminModeBtn" class="btn admin-btn" title="管理模式">
+                <span class="admin-icon">⚙️</span>
+            </button>
+        </div>
+        <button class="btn btn-primary btn-lg admin-only mt-3" onclick="initializeRecipeModal('create')" style="display: none;">
+            ✨ 创建新菜谱
+        </button>
+    </div>
+</div>
+
+<div class="row">
+    {% for recipe in recipes %}
+    <div class="col-md-4 mb-4">
+        <div class="card {% if recipe.final_images|length > 0 %}h-100{% endif %}">
+            {% if recipe.final_images|length > 0 %}
+            <a href="{{ url_for('main.recipe', recipe_id=recipe.id) }}">
+                <img src="{{ url_for('static', filename=(recipe.final_images|sort(attribute='order'))[0].image_path.replace('\\', '/')) }}" 
+                     class="card-img-top" 
+                     alt="{{ recipe.name }}" 
+                     style="height: 200px; object-fit: cover;">
+            </a>
+            {% endif %}
+            <div class="card-body">
+                <h5 class="card-title">🍽️ {{ recipe.name }}</h5>
+                <div class="ingredients-tags mb-3">
+                    {% for ingredient in recipe.ingredients %}
+                    <span class="badge bg-light text-dark border me-1 mb-1">
+                        🔸 {{ ingredient.name }}
+                        {% if ingredient.amount %}
+                        <small class="text-muted">{{ ingredient.amount }}</small>
+                        {% endif %}
+                    </span>
+                    {% endfor %}
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-muted">
+                        📅 {{ recipe.created_at.strftime('%Y-%m-%d') }}
+                    </small>
+                    <div class="btn-group">
+                        <a href="{{ url_for('main.recipe', recipe_id=recipe.id) }}" class="btn btn-sm btn-primary">👀 查看</a>
+                        <button class="btn btn-sm btn-primary edit-recipe admin-only" onclick="loadRecipeForEdit('{{ recipe.id }}')" style="display: none;">✏️ 编辑</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="alert alert-info">
+            🎯 还没有添加任何菜谱。{% if is_admin %}点击上方的"创建新菜谱"按钮开始添加吧！{% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% include 'recipe_edit_modal.html' %}
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/common_ingredients.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 根据管理模式状态显示/隐藏管理功能
+    function updateAdminElements(isAdmin) {
+        document.querySelectorAll('.admin-only').forEach(el => {
+            el.style.display = isAdmin ? 'inline-block' : 'none';
+        });
+    }
+
+    // 监听管理模式状态变化
+    window.addEventListener('adminModeChanged', function(e) {
+        updateAdminElements(e.detail.isAdmin);
+    });
+
+    // 修改管理按钮点击事件
+    window.toggleAdminMode = function() {
+        const isAdmin = localStorage.getItem('isAdmin') === 'true';
+        if (isAdmin) {
+            // 如果已经是管理模式，显示管理模态窗口
+            const adminModal = new bootstrap.Modal(document.getElementById('adminModal'));
+            adminModal.show();
+        } else {
+            // 如果不是管理模式，显示登录模态窗口
+            const loginModal = new bootstrap.Modal(document.getElementById('adminLoginModal'));
+            loginModal.show();
+        }
+    };
+
+    // 初始化管理按钮点击事件
+    const adminBtn = document.getElementById('adminModeBtn');
+    if (adminBtn) {
+        adminBtn.onclick = toggleAdminMode;
+    }
+
+    // 初始状态更新
+    updateAdminElements(localStorage.getItem('isAdmin') === 'true');
+
+    // 加载菜谱数据进行编辑
+    window.loadRecipeForEdit = function(recipeId) {
+        fetch(`/recipe/${recipeId}/edit`)
+            .then(response => response.json())
+            .then(recipe => {
+                initializeRecipeModal('edit', recipe);
+            })
+            .catch(error => {
+                console.error('加载菜谱数据失败:', error);
+                alert('加载菜谱数据失败，请重试');
+            });
+    };
+
+    // 添加样式
+    const style = document.createElement('style');
+    style.textContent = `
+        .recipe-img {
+            height: 200px;
+            object-fit: cover;
+        }
+        .ingredients-tags {
+            min-height: 50px;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+        .badge {
+            font-weight: normal;
+            font-size: 0.9em;
+            padding: 5px 8px;
+        }
+        .badge small {
+            font-size: 0.85em;
+            opacity: 0.8;
+        }
+        .card {
+            transition: transform 0.2s ease-in-out;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .card-img-container {
+            background-color: #f8f9fa;
+            overflow: hidden;
+        }
+        .card-img-container img {
+            transition: transform 0.3s ease;
+        }
+        .card:hover .card-img-container img {
+            transform: scale(1.05);
+        }
+    `;
+    document.head.appendChild(style);
+});
+</script>
+{% endblock %} 

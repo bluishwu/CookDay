@@ -1,0 +1,1358 @@
+<!-- 统一的菜谱编辑模态窗口 -->
+<div class="modal fade" id="recipeModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="recipeModalTitle">✨ 创建新菜谱</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- 添加 Sortable.js -->
+                <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+                <style>
+                    .sortable-ghost {
+                        opacity: 0.4;
+                        background-color: #f8f9fa;
+                    }
+                    .sortable-fallback {
+                        opacity: 0.8;
+                        transform: scale(0.95);
+                        background-color: white;
+                        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+                        border-radius: 4px;
+                        pointer-events: none;
+                        z-index: 1000;
+                    }
+                    .sortable-drag {
+                        opacity: 0;
+                    }
+                    .drag-handle:hover {
+                        color: #0d6efd;
+                    }
+                    .step-item, .note-item {
+                        transition: background-color 0.2s ease;
+                        border-left: 4px solid #ffb6c1;
+                        padding-left: 12px;
+                    }
+                    .step-item:hover, .note-item:hover {
+                        background-color: #f8f9fa;
+                    }
+                    .step-item textarea {
+                        cursor: text;
+                    }
+                    .step-item button {
+                        cursor: pointer;
+                    }
+                    .step-header, .note-header {
+                        cursor: move;
+                        user-select: none;
+                    }
+                    .step-header:hover {
+                        background-color: #f8f9fa;
+                    }
+                    .step-content {
+                        padding: 8px;
+                    }
+                    .ingredient-item {
+                        display: inline-flex;
+                        margin: 0.25rem;
+                        margin-bottom: 0.5rem;
+                        border: 1px solid #ff9999;
+                        border-radius: 20px;
+                        overflow: hidden;
+                        background-color: white;
+                        transition: all 0.2s ease;
+                    }
+                    .ingredient-item input {
+                        border: none;
+                        background: transparent;
+                        font-size: 0.875rem;
+                        line-height: 1.5;
+                        color: #ff9999;
+                        min-width: 6ch;
+                        padding: 0.25rem;
+                    }
+                    .ingredient-item input:first-child {
+                        border-right: 1px solid #ff9999;
+                        padding-left: 0.5rem;
+                    }
+                    .ingredient-item input.ingredient-amount {
+                        min-width: 6ch;
+                    }
+                    .ingredient-item input.ingredient-note {
+                        border-right: 1px solid #ff9999;
+                    }
+                    .ingredient-item input:focus {
+                        outline: none;
+                        background-color: transparent;
+                    }
+                    .ingredient-item:hover {
+                        background-color: #ff9999;
+                    }
+                    .ingredient-item:hover input {
+                        color: white;
+                    }
+                    .ingredient-item:hover input::placeholder {
+                        color: rgba(255, 255, 255, 0.8);
+                    }
+                    .ingredient-item input::placeholder {
+                        color: rgba(255, 153, 153, 0.8);
+                    }
+                    .ingredient-item button.remove-ingredient {
+                        border: none;
+                        background: transparent;
+                        color: #ff9999;
+                        padding: 0 0.5rem;
+                        font-size: 12px;
+                        cursor: pointer;
+                        transition: all 0.2s ease;
+                    }
+                    .ingredient-item:hover button.remove-ingredient {
+                        color: white;
+                    }
+                    .common-ingredient-item {
+                        display: inline-flex;
+                        margin: 0.25rem;
+                        border: 1px solid #ff9999;
+                        border-radius: 20px;
+                        overflow: hidden;
+                        background-color: white;
+                        transition: all 0.2s ease;
+                    }
+                    .common-ingredient-item input {
+                        border: none;
+                        background: transparent;
+                        font-size: 0.875rem;
+                        line-height: 1.5;
+                        color: #ff9999;
+                        min-width: 6ch;
+                        padding: 0.25rem;
+                    }
+                    .common-ingredient-item input:first-child {
+                        border-right: 1px solid #ff9999;
+                        min-width: 8ch;
+                        padding-left: 0.5rem;
+                    }
+                    .common-ingredient-item input:last-child {
+                        padding-right: 0.5rem;
+                        min-width: 6ch;
+                    }
+                    .common-ingredient-item:hover {
+                        background-color: #ff9999;
+                    }
+                    .common-ingredient-item:hover input {
+                        color: white;
+                    }
+                    .common-ingredient-item:hover input::placeholder {
+                        color: rgba(255, 255, 255, 0.8);
+                    }
+                    .common-ingredient-item input::placeholder {
+                        color: rgba(255, 153, 153, 0.8);
+                    }
+                    .common-ingredient-item input:focus {
+                        outline: none;
+                        background-color: transparent;
+                    }
+                    #commonIngredientsList button {
+                        color: #ff9999;
+                        border-color: #ff9999;
+                        border-radius: 20px;
+                        transition: all 0.2s ease;
+                    }
+                    #commonIngredientsList button:hover {
+                        background-color: #ff9999;
+                        color: white;
+                    }
+                    .common-ingredients .btn {
+                        color: #ff9999;
+                        border-color: #ff9999;
+                        border-radius: 20px;
+                        transition: all 0.2s ease;
+                    }
+                    .common-ingredients .btn:hover {
+                        background-color: #ff9999;
+                        color: white;
+                    }
+                    #ingredientsList {
+                        padding-bottom: 0.5rem;
+                    }
+                    .final-images-container {
+                        display: grid;
+                        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                        gap: 1rem;
+                    }
+                    .final-image-item {
+                        cursor: move;
+                    }
+                    .final-image-item img {
+                        width: 100%;
+                        height: 100%;
+                        object-fit: cover;
+                    }
+                    .upload-progress {
+                        position: absolute;
+                        bottom: 0;
+                        left: 0;
+                        right: 0;
+                        height: 4px;
+                        background-color: rgba(255, 255, 255, 0.5);
+                        border-radius: 0 0 4px 4px;
+                    }
+                    .upload-progress-bar {
+                        height: 100%;
+                        background-color: #ff9999;
+                        width: 0;
+                        transition: width 0.2s;
+                        border-radius: 0 0 4px 4px;
+                    }
+                    .upload-status {
+                        position: absolute;
+                        top: 50%;
+                        left: 50%;
+                        transform: translate(-50%, -50%);
+                        background: rgba(0, 0, 0, 0.7);
+                        color: white;
+                        padding: 4px 8px;
+                        border-radius: 4px;
+                        font-size: 12px;
+                    }
+                    .delete-final-image {
+                        opacity: 0;
+                        transition: opacity 0.2s;
+                        z-index: 10;
+                        pointer-events: auto;
+                    }
+                    .final-image-item:hover .delete-final-image {
+                        opacity: 1;
+                    }
+                    /* 在移动设备上默认显示删除按钮 */
+                    @media (max-width: 768px) {
+                        .delete-final-image {
+                            opacity: 1;
+                            z-index: 100;
+                        }
+                    }
+                </style>
+                <form id="recipeForm" enctype="multipart/form-data">
+                    <input type="hidden" id="recipe-id" name="recipe_id">
+                    <div class="mb-3">
+                        <label for="recipe-name" class="form-label">🏷️ 菜名</label>
+                        <input type="text" class="form-control" id="recipe-name" name="name" required>
+                        <div class="invalid-feedback" style="display: none;">请输入菜名</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">📝 描述</label>
+                        <textarea class="form-control auto-expand" id="description" name="description" rows="3" oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"></textarea>
+                        <div class="video-preview mt-2"></div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">🥘 食材准备</label>
+                        <div class="common-ingredients mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <label class="form-label mb-0">🔍 常用食材快速选择</label>
+                                <button type="button" class="btn btn-sm" id="manageCommonIngredients">
+                                    ⚙️ 管理
+                                </button>
+                            </div>
+                            <div id="commonIngredientsList" class="common-ingredients-list"></div>
+                        </div>
+                        <div id="ingredientsList"></div>
+                        <button type="button" class="btn btn-outline-primary btn-sm mt-2" id="addIngredient">
+                            ➕ 添加食材
+                        </button>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">📝 制作步骤</label>
+                        <div id="stepsList"></div>
+                        <button type="button" class="btn btn-outline-primary btn-sm mt-2" id="addStep">
+                            ➕ 添加步骤
+                        </button>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">📒 改进笔记</label>
+                        <div id="notesList"></div>
+                        <button type="button" class="btn btn-outline-primary btn-sm mt-2" id="addNote">
+                            ➕ 添加笔记
+                        </button>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">📸 成品图片</label>
+                        <div id="finalImagesList" class="final-images-container mb-2"></div>
+                        <input type="file" class="form-control" id="recipe-final-images" name="final_images[]" accept="image/*" multiple onchange="handleImageUpload(event)">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger me-auto" id="deleteRecipe" style="display: none;">🗑️ 删除菜谱</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="saveRecipe">✨ 保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 统一的JavaScript代码 -->
+<script>
+// 从服务器获取调试配置
+const DEBUG_CONFIG = JSON.parse('{{ debug_config|tojson|safe }}');
+
+// 自定义日志函数
+function debugLog(...args) {
+    console.log(...args);
+}
+
+function debugError(...args) {
+    console.error(...args);
+}
+
+// 初始化移动端调试工具
+if (DEBUG_CONFIG.ENABLE_ERUDA) {
+    (function () {
+        var script = document.createElement('script');
+        script.src = "//cdn.jsdelivr.net/npm/eruda";
+        document.body.appendChild(script);
+        script.onload = function () {
+            eruda.init();
+        };
+    })();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const recipeModal = document.getElementById('recipeModal');
+    const modal = new bootstrap.Modal(recipeModal);
+    
+    // 初始化模态窗口
+    function initializeModal(mode = 'create', recipeData = null) {
+        const form = document.getElementById('recipeForm');
+        const modalTitle = document.getElementById('recipeModalTitle');
+        const deleteButton = document.getElementById('deleteRecipe');
+        const saveButton = document.getElementById('saveRecipe');
+        const manageButton = document.getElementById('manageCommonIngredients');
+        
+        // 重置管理按钮状态
+        manageButton.textContent = '⚙️ 管理';
+        manageButton.style.backgroundColor = '';
+        manageButton.style.color = '#ff9999';
+        manageButton.setAttribute('data-manage-mode', 'false');
+        
+        // 重置表单
+        form.reset();
+        document.getElementById('ingredientsList').innerHTML = '';
+        document.getElementById('stepsList').innerHTML = '';
+        document.getElementById('notesList').innerHTML = '';
+        document.getElementById('finalImagesList').innerHTML = '';
+        
+        // 清除视频预览
+        const videoPreview = document.querySelector('.video-preview');
+        if (videoPreview) {
+            videoPreview.innerHTML = '';
+        }
+        
+        // 初始化常用食材
+        initializeCommonIngredients();
+        
+        if (mode === 'create') {
+            modalTitle.textContent = '✨ 创建新菜谱';
+            deleteButton.style.display = 'none';
+            saveButton.textContent = '✨ 创建菜谱';
+            document.getElementById('recipe-id').value = '';
+        } else {
+            modalTitle.textContent = '✏️ 编辑菜谱';
+            deleteButton.style.display = 'block';
+            saveButton.textContent = '💾 保存修改';
+            
+            if (recipeData) {
+                loadRecipeData(recipeData);
+            }
+        }
+        
+        // 添加初始的食材、步骤和笔记
+        if (mode === 'create') {
+            addIngredientWithValues('ingredientsList');
+            addStep();
+            addNote();
+        }
+
+        // 为描述文本框添加视频检测
+        const descriptionTextarea = document.getElementById('description');
+        if (descriptionTextarea) {
+            setupVideoDetection(descriptionTextarea);
+        }
+        
+        modal.show();
+    }
+    
+    // 加载菜谱数据
+    function loadRecipeData(recipe) {
+        document.getElementById('recipe-id').value = recipe.id;
+        document.getElementById('recipe-name').value = recipe.name;
+        document.getElementById('description').value = recipe.description;
+        
+        // 加载食材
+        recipe.ingredients.forEach(ingredient => {
+            addIngredientWithValues('ingredientsList', ingredient.name, ingredient.amount, ingredient.note);
+        });
+        
+        // 加载步骤
+        recipe.steps.forEach(step => {
+            addStep(step.description);
+        });
+        
+        // 加载笔记
+        if (recipe.notes && recipe.notes.length > 0) {
+            recipe.notes.forEach(note => {
+                const created_at = note.created_at ? new Date(note.created_at).toLocaleString('zh-CN', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }) : '';
+                const updated_at = note.updated_at ? new Date(note.updated_at).toLocaleString('zh-CN', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }) : '';
+                addNote(note.content, created_at, updated_at, note.id);
+            });
+        }
+        
+        // 加载成品图片
+        const finalImagesList = document.getElementById('finalImagesList');
+        finalImagesList.innerHTML = '';
+        if (recipe.final_images && recipe.final_images.length > 0) {
+            recipe.final_images.forEach(image => {
+                const imageDiv = document.createElement('div');
+                imageDiv.className = 'final-image-item';
+                imageDiv.setAttribute('data-id', image.id);
+                imageDiv.innerHTML = `
+                    <div class="position-relative">
+                        <img src="/static/${image.path}" class="img-fluid rounded" alt="成品图片">
+                        <button type="button" class="btn btn-sm position-absolute top-0 end-0 m-2 delete-final-image" 
+                                style="background: rgba(255, 255, 255, 0.8); border-radius: 50%; width: 30px; height: 30px; padding: 0; z-index: 100;">
+                            ❌
+                        </button>
+                    </div>
+                `;
+                finalImagesList.appendChild(imageDiv);
+            });
+        }
+        
+        // 修改 Sortable 初始化，添加图片排序功能
+        const finalImagesContainer = document.getElementById('finalImagesList');
+        new Sortable(finalImagesContainer, {
+            animation: 150,
+            filter: '.delete-final-image',  // 排除删除按钮不参与拖动
+            preventOnFilter: true,  // 阻止在过滤元素上的默认事件
+        });
+    }
+    
+    // 添加食材
+    function addIngredientWithValues(containerId, name = '', amount = '', note = '') {
+        const template = `
+            <div class="ingredient-item">
+                <input type="text" class="ingredient-name" name="ingredients[]" value="${name}" placeholder="食材名称">
+                <input type="text" class="ingredient-amount" name="amounts[]" value="${amount}" placeholder="用量">
+                <input type="text" class="ingredient-note" name="ingredient_notes[]" value="${note}" placeholder="备注">
+                <button type="button" class="remove-ingredient">❌</button>
+            </div>
+        `;
+        document.getElementById(containerId).insertAdjacentHTML('beforeend', template);
+        
+        // 为新添加的食材输入框绑定事件
+        const newIngredient = document.getElementById(containerId).lastElementChild;
+        const inputs = newIngredient.querySelectorAll('input');
+        inputs.forEach(input => {
+            // 调整输入框宽度
+            adjustInputWidth(input);
+            
+            // 监听输入事件以调整宽度
+            input.addEventListener('input', () => adjustInputWidth(input));
+            
+            // 监听回车键
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault(); // 阻止表单提交
+                    addIngredientWithValues('ingredientsList');
+                    // 聚焦到新添加的食材名称输入框
+                    const lastIngredient = document.getElementById('ingredientsList').lastElementChild;
+                    const nameInput = lastIngredient.querySelector('.ingredient-name');
+                    nameInput.focus();
+                }
+            });
+        });
+    }
+    
+    // 修改步骤模板
+    function addStep(description = '') {
+        const template = `
+            <div class="step-item">
+                <div class="step-header">
+                    <label class="form-label">✨ 步骤 ${document.querySelectorAll('.step-item').length + 1}</label>
+                    <button type="button" class="remove-step" style="border: none; background: none; padding: 2px 6px;">❌</button>
+                </div>
+                <textarea class="form-control auto-expand" name="steps[]" rows="2" placeholder="输入步骤描述">${description}</textarea>
+            </div>
+        `;
+        document.getElementById('stepsList').insertAdjacentHTML('beforeend', template);
+        
+        // 为新添加的步骤绑定自动扩展事件
+        const newStep = document.getElementById('stepsList').lastElementChild;
+        const textarea = newStep.querySelector('textarea');
+        setupAutoExpand(textarea);
+    }
+    
+    // 修改笔记模板
+    function addNote(content = '', created_at = '', updated_at = '', note_id = '') {
+        const template = `
+            <div class="note-item mb-3">
+                <div class="note-header d-flex justify-content-between align-items-center mb-2 position-relative">
+                    <div>
+                        <label class="form-label mb-0">📝 笔记</label>
+                        ${created_at ? `
+                            <small class="text-muted ms-2">
+                                创建于 ${created_at}
+                            </small>
+                        ` : ''}
+                    </div>
+                    <button type="button" class="btn btn-sm remove-note position-absolute end-0" 
+                        style="border: none; padding: 2px 6px; font-size: 12px;">
+                        ❌
+                    </button>
+                </div>
+                <textarea class="form-control auto-expand" name="notes[]" rows="2" placeholder="记录你的改进建议...">${content}</textarea>
+                <input type="hidden" name="note_ids[]" value="${note_id}">
+            </div>
+        `;
+        document.getElementById('notesList').insertAdjacentHTML('beforeend', template);
+        
+        // 为新添加的笔记绑定自动扩展事件
+        const newNote = document.getElementById('notesList').lastElementChild;
+        const textarea = newNote.querySelector('textarea');
+        setupAutoExpand(textarea);
+    }
+    
+    // 绑定按钮事件
+    document.getElementById('addIngredient').addEventListener('click', () => addIngredientWithValues('ingredientsList'));
+    document.getElementById('addStep').addEventListener('click', () => addStep());
+    document.getElementById('addNote').addEventListener('click', () => addNote());
+    
+    // 删除事件委托
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('remove-ingredient')) {
+            e.target.closest('.ingredient-item').remove();
+        } else if (e.target.classList.contains('remove-step')) {
+            e.target.closest('.step-item').remove();
+            updateStepNumbers();
+        } else if (e.target.classList.contains('remove-note')) {
+            e.target.closest('.note-item').remove();
+        }
+    });
+    
+    // 修改 Sortable 初始化
+    const stepsContainer = document.getElementById('stepsList');
+    new Sortable(stepsContainer, {
+        animation: 150,
+        handle: '.step-header',  // 只能通过头部区域拖动
+        onEnd: function() {
+            updateStepNumbers();
+        }
+    });
+    
+    // 更新步骤编号
+    function updateStepNumbers() {
+        document.querySelectorAll('#stepsList .step-item').forEach((item, index) => {
+            const label = item.querySelector('.form-label');
+            if (label) {
+                label.textContent = `✨ 步骤 ${index + 1}`;
+            }
+        });
+    }
+    
+    // 添加临时图片存储数组
+    let tempImages = [];
+
+    // 修改图片上传处理函数
+    window.handleImageUpload = function(event) {
+        const files = event.target.files;
+        const recipeId = document.getElementById('recipe-id').value;
+        
+        Array.from(files).forEach(file => {
+            // 创建临时URL
+            const tempUrl = URL.createObjectURL(file);
+            
+            if (recipeId) {
+                // 如果有recipe_id，直接上传到服务器
+                const formData = new FormData();
+                formData.append('image', file);
+                
+                // 创建带有进度条的预览元素
+                const imageDiv = document.createElement('div');
+                imageDiv.className = 'final-image-item';
+                imageDiv.innerHTML = `
+                    <div class="position-relative">
+                        <img src="${tempUrl}" class="img-fluid rounded" alt="成品图片">
+                        <div class="upload-progress">
+                            <div class="upload-progress-bar"></div>
+                        </div>
+                        <div class="upload-status">准备上传...</div>
+                    </div>
+                `;
+                document.getElementById('finalImagesList').appendChild(imageDiv);
+
+                const progressBar = imageDiv.querySelector('.upload-progress-bar');
+                const statusText = imageDiv.querySelector('.upload-status');
+                
+                // 使用 XMLHttpRequest 来获取上传进度
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', `/recipe/${recipeId}/final_image/add`, true);
+                
+                // 设置超时时间（5分钟）
+                xhr.timeout = 300000;
+                
+                // 添加错误处理和日志
+                debugLog('开始上传图片:', file.name, '大小:', (file.size / 1024 / 1024).toFixed(2) + 'MB');
+                
+                // 添加状态码处理
+                xhr.onreadystatechange = function() {
+                    debugLog('请求状态变化:', xhr.readyState, xhr.status);
+                };
+                
+                xhr.upload.onprogress = function(e) {
+                    if (e.lengthComputable) {
+                        const percentComplete = (e.loaded / e.total) * 100;
+                        progressBar.style.width = percentComplete + '%';
+                        statusText.textContent = Math.round(percentComplete) + '%';
+                        debugLog('上传进度:', Math.round(percentComplete) + '%',
+                                  '已上传:', (e.loaded / 1024 / 1024).toFixed(2) + 'MB',
+                                  '总大小:', (e.total / 1024 / 1024).toFixed(2) + 'MB');
+                    }
+                };
+                
+                xhr.onload = function() {
+                    debugLog('上传完成，状态码:', xhr.status);
+                    debugLog('响应头:', xhr.getAllResponseHeaders());
+                    
+                    if (xhr.status === 502) {
+                        debugError('服务器网关错误 (502)');
+                        statusText.textContent = '服务器错误，请重试';
+                        statusText.style.backgroundColor = 'rgba(255, 0, 0, 0.7)';
+                        setTimeout(() => imageDiv.remove(), 2000);
+                        return;
+                    }
+                    
+                    try {
+                        // 检查响应类型
+                        const contentType = xhr.getResponseHeader('content-type');
+                        if (!contentType || !contentType.includes('application/json')) {
+                            throw new Error('服务器返回了非JSON格式的响应');
+                        }
+                        
+                        const response = JSON.parse(xhr.responseText);
+                        if (xhr.status === 200 && response.success) {
+                            debugLog('上传成功，图片ID:', response.image.id);
+                            imageDiv.setAttribute('data-id', response.image.id);
+                            imageDiv.innerHTML = `
+                                <div class="position-relative">
+                                    <img src="/static/${response.image.path}" class="img-fluid rounded" alt="成品图片">
+                                    <button type="button" class="btn btn-sm position-absolute top-0 end-0 m-2 delete-final-image" 
+                                            style="background: rgba(255, 255, 255, 0.8); border-radius: 50%; width: 30px; height: 30px; padding: 0; z-index: 100;">
+                                        ❌
+                                    </button>
+                                </div>
+                            `;
+                        } else {
+                            throw new Error(response.error || '上传失败');
+                        }
+                    } catch (e) {
+                        console.error('处理响应失败:', e);
+                        statusText.textContent = '上传失败，请重试';
+                        statusText.style.backgroundColor = 'rgba(255, 0, 0, 0.7)';
+                        setTimeout(() => imageDiv.remove(), 2000);
+                    }
+                };
+
+                xhr.onerror = function(e) {
+                    debugError('上传错误:', e);
+                    statusText.textContent = '网络错误，请重试';
+                    statusText.style.backgroundColor = 'rgba(255, 0, 0, 0.7)';
+                    setTimeout(() => imageDiv.remove(), 2000);
+                };
+
+                xhr.ontimeout = function() {
+                    debugError('上传超时');
+                    statusText.textContent = '上传超时，请重试';
+                    statusText.style.backgroundColor = 'rgba(255, 0, 0, 0.7)';
+                    setTimeout(() => imageDiv.remove(), 2000);
+                };
+                
+                try {
+                    // 检查文件大小
+                    const maxSize = 16 * 1024 * 1024; // 16MB
+                    if (file.size > maxSize) {
+                        throw new Error('文件大小超过16MB限制');
+                    }
+                    
+                    xhr.send(formData);
+                    debugLog('已发送上传请求');
+                } catch (e) {
+                    console.error('发送请求失败:', e);
+                    statusText.textContent = e.message || '发送请求失败';
+                    statusText.style.backgroundColor = 'rgba(255, 0, 0, 0.7)';
+                    setTimeout(() => imageDiv.remove(), 2000);
+                }
+            } else {
+                // 如果没有recipe_id，保存到临时数组
+                tempImages.push(file);
+                appendImageToList(null, tempUrl, true);
+            }
+        });
+        
+        // 清空文件输入框，允许重复上传相同的文件
+        event.target.value = '';
+    };
+
+    // 添加图片到列表的辅助函数
+    function appendImageToList(id, url, isTemp) {
+        const imageDiv = document.createElement('div');
+        imageDiv.className = 'final-image-item';
+        if (id) imageDiv.setAttribute('data-id', id);
+        if (isTemp) imageDiv.setAttribute('data-temp', 'true');
+        
+        imageDiv.innerHTML = `
+            <div class="position-relative">
+                <img src="${url}" class="img-fluid rounded" alt="成品图片">
+                <button type="button" class="btn btn-sm position-absolute top-0 end-0 m-2 delete-final-image" 
+                        style="background: rgba(255, 255, 255, 0.8); border-radius: 50%; width: 30px; height: 30px; padding: 0; z-index: 100;">
+                    ❌
+                </button>
+            </div>
+        `;
+        document.getElementById('finalImagesList').appendChild(imageDiv);
+    }
+
+    // 修改保存菜谱的代码
+    document.getElementById('saveRecipe').addEventListener('click', function() {
+        const form = document.getElementById('recipeForm');
+        const formData = new FormData(form);
+        const recipeId = document.getElementById('recipe-id').value;
+        const nameInput = document.getElementById('recipe-name');
+        const nameError = nameInput.nextElementSibling;
+        
+        // 验证菜名
+        if (!nameInput.value.trim()) {
+            nameInput.classList.add('is-invalid');
+            nameError.style.display = 'block';
+            nameInput.focus();
+            return;
+        }
+
+        // 添加临时图片到formData
+        tempImages.forEach(file => {
+            formData.append('final_images[]', file);
+        });
+        
+        const url = recipeId ? `/recipe/${recipeId}/edit` : '/recipe/new';
+        
+        fetch(url, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // 清空临时图片数组
+                tempImages = [];
+                location.reload();
+            } else {
+                nameInput.classList.add('is-invalid');
+                nameError.textContent = data.error || '保存失败，请检查所有必填项';
+                nameError.style.display = 'block';
+            }
+        })
+        .catch(error => {
+            console.error('保存菜谱时发生错误:', error);
+            nameInput.classList.add('is-invalid');
+            nameError.textContent = '保存失败，请重试。如果问题持续存在，请刷新页面。';
+            nameError.style.display = 'block';
+        });
+    });
+
+    // 修改删除图片的处理
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.delete-final-image')) {
+            const imageItem = e.target.closest('.final-image-item');
+            if (imageItem.hasAttribute('data-temp')) {
+                // 如果是临时图片，从临时数组中删除
+                const imgSrc = imageItem.querySelector('img').src;
+                const index = tempImages.findIndex(file => URL.createObjectURL(file) === imgSrc);
+                if (index > -1) {
+                    URL.revokeObjectURL(imgSrc); // 释放URL
+                    tempImages.splice(index, 1);
+                }
+                imageItem.remove();
+            } else if (confirm('确定要删除这张图片吗？')) {
+                const recipeId = document.getElementById('recipe-id').value;
+                const imageId = imageItem.getAttribute('data-id');
+                fetch(`/recipe/${recipeId}/final_image/${imageId}/delete`, {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        imageItem.remove();
+                    } else {
+                        alert('删除失败：' + (data.error || '未知错误'));
+                    }
+                })
+                .catch(error => {
+                    console.error('删除图片失败:', error);
+                    alert('删除失败，请重试');
+                });
+            }
+        }
+    });
+
+    // 修改模态窗口关闭事件处理
+    document.getElementById('recipeModal').addEventListener('hide.bs.modal', function() {
+        const manageButton = document.getElementById('manageCommonIngredients');
+        // 重置管理按钮状态
+        manageButton.textContent = '⚙️ 管理';
+        manageButton.style.backgroundColor = '';
+        manageButton.style.color = '#ff9999';
+        manageButton.setAttribute('data-manage-mode', 'false');
+        // 重新初始化常用食材列表
+        initializeCommonIngredients(false);
+        // 清空图片列表
+        document.getElementById('finalImagesList').innerHTML = '';
+        // 清空文件输入框
+        document.getElementById('recipe-final-images').value = '';
+        // 清空临时图片数组和释放URL
+        tempImages.forEach(file => {
+            URL.revokeObjectURL(URL.createObjectURL(file));
+        });
+        tempImages = [];
+    });
+
+    // 添加删除菜谱的事件处理
+    document.getElementById('deleteRecipe').addEventListener('click', function() {
+        if (!confirm('确定要删除这个菜谱吗？此操作不可恢复！')) {
+            return;
+        }
+        
+        const recipeId = document.getElementById('recipe-id').value;
+        fetch(`/recipe/${recipeId}/delete`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = '/';
+            } else {
+                alert('删除失败：' + (data.error || '未知错误'));
+            }
+        })
+        .catch(error => {
+            console.error('删除菜谱失败:', error);
+            alert('删除失败，请重试');
+        });
+    });
+
+    // 食材智能提示功能
+    function setupIngredientSuggestions(textarea) {
+        let currentSuggestions = [];
+        let selectedIndex = -1;
+        let suggestionsList = textarea.nextElementSibling;
+        
+        if (!suggestionsList || !suggestionsList.classList.contains('ingredients-suggestions')) {
+            suggestionsList = document.createElement('div');
+            suggestionsList.className = 'ingredients-suggestions';
+            suggestionsList.style.display = 'none';  // 确保初始状态为隐藏
+            textarea.parentNode.insertBefore(suggestionsList, textarea.nextSibling);
+        } else {
+            suggestionsList.style.display = 'none';  // 如果已存在，也确保为隐藏状态
+        }
+
+        function showSuggestions(suggestions, startPos) {
+            currentSuggestions = suggestions;
+            selectedIndex = -1;
+            suggestionsList.innerHTML = '';
+            
+            if (suggestions.length > 0) {
+                suggestions.forEach((suggestion, index) => {
+                    const div = document.createElement('div');
+                    div.className = 'suggestion-item';
+                    div.innerHTML = `
+                        <span class="name">${suggestion.name}</span>
+                        <span class="unit">${suggestion.unit}</span>
+                    `;
+                    div.addEventListener('click', () => {
+                        applySuggestion(suggestion, startPos);
+                    });
+                    div.addEventListener('mouseover', () => {
+                        selectedIndex = index;
+                        updateSelectedSuggestion();
+                    });
+                    suggestionsList.appendChild(div);
+                });
+                suggestionsList.style.display = 'block';
+            } else {
+                suggestionsList.style.display = 'none';
+            }
+        }
+
+        function applySuggestion(suggestion, startPos) {
+            const text = textarea.value;
+            const cursorPos = textarea.selectionStart;
+            textarea.value = text.substring(0, startPos) + suggestion.name + text.substring(cursorPos);
+            textarea.selectionStart = textarea.selectionEnd = startPos + suggestion.name.length;
+            suggestionsList.style.display = 'none';
+            highlightIngredients(textarea);
+            textarea.focus();
+        }
+
+        function updateSelectedSuggestion() {
+            const items = suggestionsList.querySelectorAll('.suggestion-item');
+            items.forEach((item, index) => {
+                if (index === selectedIndex) {
+                    item.classList.add('active');
+                    item.scrollIntoView({ block: 'nearest' });
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+        }
+
+        let startPos = 0;
+        textarea.addEventListener('input', function() {
+            const pos = this.selectionStart;
+            const text = this.value;
+            
+            console.log('当前输入位置:', pos);
+            console.log('当前文本:', text);
+            
+            // 只获取最后输入的字符
+            const currentChar = text[pos - 1] || '';
+            console.log('当前输入字符:', currentChar);
+            
+            if (currentChar && !/[，。,.、\n\s]/.test(currentChar)) {
+                // 只获取当前表单中已添加的食材
+                const currentIngredients = Array.from(
+                    document.querySelectorAll('input[name="ingredients[]"]')
+                ).map(input => ({ 
+                    name: input.value, 
+                    unit: input.closest('.ingredient-item').querySelector('input[name="amounts[]"]').value 
+                })).filter(ing => ing.name.trim() !== '');
+                
+                console.log('当前表单中的食材:', currentIngredients);
+                
+                // 只用当前字符匹配已添加的食材
+                const matches = currentIngredients.filter(ing => 
+                    ing.name && ing.name.toLowerCase().includes(currentChar.toLowerCase())
+                );
+                
+                console.log('匹配到的食材:', matches);
+                if (matches.length > 0) {
+                    showSuggestions(matches, pos - 1);
+                } else {
+                    suggestionsList.style.display = 'none';
+                }
+            } else {
+                console.log('没有检测到有效的输入');
+                suggestionsList.style.display = 'none';
+            }
+        });
+
+        // 键盘导航
+        textarea.addEventListener('keydown', function(e) {
+            if (suggestionsList.style.display === 'block') {
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    selectedIndex = Math.min(selectedIndex + 1, currentSuggestions.length - 1);
+                    updateSelectedSuggestion();
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    selectedIndex = Math.max(selectedIndex - 1, 0);
+                    updateSelectedSuggestion();
+                } else if (e.key === 'Enter' || e.key === 'Tab') {
+                    e.preventDefault();
+                    if (selectedIndex >= 0) {
+                        applySuggestion(currentSuggestions[selectedIndex], startPos);
+                    }
+                } else if (e.key === 'Escape') {
+                    suggestionsList.style.display = 'none';
+                }
+            }
+        });
+
+        // 点击其他地方时隐藏建议列表
+        document.addEventListener('click', function(e) {
+            if (!textarea.contains(e.target) && !suggestionsList.contains(e.target)) {
+                suggestionsList.style.display = 'none';
+            }
+        });
+    }
+
+    // 视频链接检测功能
+    function setupVideoDetection(textarea) {
+        // 确保视频预览区域存在
+        let previewContainer = textarea.nextElementSibling;
+        if (!previewContainer || !previewContainer.classList.contains('video-preview')) {
+            previewContainer = document.createElement('div');
+            previewContainer.className = 'video-preview mt-2';
+            textarea.parentNode.insertBefore(previewContainer, textarea.nextSibling);
+        }
+
+        textarea.addEventListener('input', function() {
+            handleVideoLink(this.value, textarea.parentNode);
+        });
+    }
+
+    // 统一的链接解析处理函数
+    function handleVideoLink(text, container) {
+        // 如果文本为空，直接返回
+        if (!text || !text.trim()) {
+            return;
+        }
+
+        // 匹配所有URL
+        const urlRegex = /https?:\/\/[^\s]+/g;
+        const urls = text.match(urlRegex);
+        
+        if (urls) {
+            urls.forEach(url => {
+                // 检查是否已经处理过这个链接
+                const existingPreview = container.querySelector(`[data-video-link="${url}"]`);
+                if (existingPreview) {
+                    return;
+                }
+                
+                fetch('/parse_video_url', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url: url })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const preview = document.createElement('div');
+                        preview.className = 'video-preview mt-2';
+                        preview.setAttribute('data-video-link', url);
+                        
+                        // 根据URL判断平台
+                        let platform = '🔗';
+                        if (url.includes('douyin.com')) {
+                            platform = '🎵';
+                        } else if (url.includes('bilibili.com')) {
+                            platform = '📺';
+                        }
+                        
+                        preview.innerHTML = `
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center">
+                                        <span class="platform-icon me-2">${platform}</span>
+                                        <span class="video-title">${data.data.title}</span>
+                                        <a href="${url}" target="_blank" class="btn btn-sm btn-outline-primary ms-auto">
+                                            查看链接
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        
+                        const previewContainer = container.querySelector('.video-preview');
+                        if (previewContainer) {
+                            previewContainer.innerHTML = preview.innerHTML;
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('解析视频链接失败:', error);
+                });
+            });
+        }
+    }
+
+    // 添加自动扩展高度的函数
+    function setupAutoExpand(textarea) {
+        function autoExpand() {
+            // 重置高度以获取正确的scrollHeight
+            textarea.style.height = 'auto';
+            // 设置新的高度
+            textarea.style.height = textarea.scrollHeight + 'px';
+        }
+        
+        // 绑定事件
+        textarea.addEventListener('input', autoExpand);
+        textarea.addEventListener('focus', autoExpand);
+        
+        // 初始化高度
+        // 使用setTimeout确保内容已经渲染完成
+        setTimeout(autoExpand, 0);
+    }
+
+    // 为已有的文本框添加自动扩展功能
+    function initializeAllTextareas() {
+        document.querySelectorAll('.auto-expand').forEach(setupAutoExpand);
+    }
+
+    // 在页面加载完成后初始化所有文本框
+    document.addEventListener('DOMContentLoaded', initializeAllTextareas);
+    
+    // 在模态框显示后也触发一次自动展开
+    document.getElementById('recipeModal').addEventListener('shown.bs.modal', function() {
+        document.querySelectorAll('.auto-expand').forEach(textarea => {
+            const event = new Event('input');
+            textarea.dispatchEvent(event);
+        });
+    });
+
+    // 在 initializeCommonIngredients 函数中添加 Sortable 实例的管理
+    let commonIngredientsSortable = null;  // 添加全局变量来跟踪 Sortable 实例
+
+    function initializeCommonIngredients(isManageMode = false) {
+        const commonIngredientsList = document.getElementById('commonIngredientsList');
+        
+        // 如果存在之前的 Sortable 实例，先销毁它
+        if (commonIngredientsSortable) {
+            commonIngredientsSortable.destroy();
+            commonIngredientsSortable = null;
+        }
+        
+        commonIngredientsList.innerHTML = '';
+        
+        fetch('/common_ingredients')
+            .then(response => response.json())
+            .then(ingredients => {
+                ingredients.forEach(ingredient => {
+                    if (isManageMode) {
+                        // 管理模式：显示编辑表单
+                        const div = document.createElement('div');
+                        div.className = 'common-ingredient-item';
+                        div.setAttribute('data-id', ingredient.id);
+                        div.innerHTML = `
+                            <input type="text" value="${ingredient.name}" placeholder="食材名称">
+                            <input type="text" value="${ingredient.unit}" placeholder="默认用量">
+                        `;
+                        commonIngredientsList.appendChild(div);
+                    } else {
+                        // 普通模式：显示快速选择按钮
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = 'btn btn-sm btn-outline-primary m-1';
+                        btn.textContent = ingredient.name;
+                        btn.setAttribute('data-id', ingredient.id);
+                        btn.addEventListener('click', () => addIngredientWithValues('ingredientsList', ingredient.name, ingredient.unit));
+                        commonIngredientsList.appendChild(btn);
+                    }
+                });
+
+                if (isManageMode) {
+                    // 在管理模式下添加新的空白输入行
+                    const newDiv = document.createElement('div');
+                    newDiv.className = 'common-ingredient-item';
+                    newDiv.innerHTML = `
+                        <input type="text" placeholder="新食材名称">
+                        <input type="text" placeholder="默认用量">
+                    `;
+                    commonIngredientsList.appendChild(newDiv);
+
+                    // 设置新食材处理
+                    setupNewIngredientHandling();
+                } else {
+                    // 普通模式的拖动排序
+                    commonIngredientsSortable = new Sortable(commonIngredientsList, {
+                        animation: 150,
+                        onEnd: saveCommonIngredientsOrder,
+                        // 添加移动端所需的配置
+                        ghostClass: 'sortable-ghost',  // 拖动时的样式类
+                        touchStartThreshold: 3,  // 开始拖动的阈值
+                        delay: 150,  // 延迟开始拖动，防止误触
+                        delayOnTouchOnly: true,  // 仅在触摸时应用延迟
+                        forceFallback: true,  // 强制使用回退选项以确保跨平台一致性
+                        fallbackClass: 'sortable-fallback',  // 回退时的样式类
+                        fallbackOnBody: true,  // 将 ghost 元素添加到 body
+                        dragClass: 'sortable-drag'  // 拖动时的样式类
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('获取常用食材失败:', error);
+            });
+    }
+
+    // 修改管理按钮的切换样式
+    document.getElementById('manageCommonIngredients').addEventListener('click', function() {
+        const isManageMode = this.getAttribute('data-manage-mode') === 'true';
+        if (!isManageMode) {
+            // 切换到管理模式
+            this.textContent = '💾 保存';
+            this.style.backgroundColor = '#ff9999';
+            this.style.color = 'white';
+            this.setAttribute('data-manage-mode', 'true');
+            initializeCommonIngredients(true);
+        } else {
+            // 保存更改并切换回普通模式
+            saveCommonIngredients().then(() => {
+                this.textContent = '⚙️ 管理';
+                this.style.backgroundColor = '';
+                this.style.color = '#ff9999';
+                this.setAttribute('data-manage-mode', 'false');
+                initializeCommonIngredients(false);
+            });
+        }
+    });
+
+    // 添加保存常用食材的函数
+    async function saveCommonIngredients() {
+        const items = Array.from(document.querySelectorAll('.common-ingredient-item')).map((el, index) => {
+            const inputs = el.querySelectorAll('input');
+            const id = el.getAttribute('data-id');
+            return {
+                id: id ? parseInt(id) : null,
+                name: inputs[0].value.trim(),
+                unit: inputs[1].value.trim(),
+                order: index
+            };
+        }).filter(item => item.name); // 过滤掉空名称的项
+
+        try {
+            const response = await fetch('/common_ingredients/update', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(items)
+            });
+            const data = await response.json();
+            if (!data.success) {
+                throw new Error(data.error || '保存失败');
+            }
+        } catch (error) {
+            console.error('保存常用食材失败:', error);
+            alert('保存失败，请重试');
+            throw error;
+        }
+    }
+
+    // 保存排序的函数
+    function saveCommonIngredientsOrder() {
+        const items = Array.from(document.getElementById('commonIngredientsList').children).map((el, index) => ({
+            id: parseInt(el.getAttribute('data-id')),
+            order: index
+        }));
+        
+        fetch('/common_ingredients/reorder', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(items)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (!data.success) {
+                console.error('保存排序失败:', data.error);
+            }
+        })
+        .catch(error => {
+            console.error('保存排序时发生错误:', error);
+        });
+    }
+
+    // 添加新的事件监听函数
+    function setupNewIngredientHandling() {
+        const commonIngredientsList = document.getElementById('commonIngredientsList');
+        
+        // 为所有现有的输入框调整宽度
+        commonIngredientsList.querySelectorAll('input').forEach(adjustInputWidth);
+        
+        // 监听所有输入框的输入事件
+        commonIngredientsList.addEventListener('input', function(e) {
+            if (e.target.tagName === 'INPUT') {
+                adjustInputWidth(e.target);
+                
+                const currentItem = e.target.closest('.common-ingredient-item');
+                const isLastItem = currentItem === commonIngredientsList.lastElementChild;
+                
+                if (isLastItem && e.target.value.trim() !== '') {
+                    const newDiv = document.createElement('div');
+                    newDiv.className = 'common-ingredient-item';
+                    newDiv.innerHTML = `
+                        <input type="text" placeholder="新食材名称">
+                        <input type="text" placeholder="默认用量">
+                    `;
+                    commonIngredientsList.appendChild(newDiv);
+                    // 为新添加的输入框调整宽度
+                    newDiv.querySelectorAll('input').forEach(adjustInputWidth);
+                }
+            }
+        });
+
+        // 添加退格键处理
+        commonIngredientsList.addEventListener('keydown', function(e) {
+            if (e.key === 'Backspace') {
+                const input = e.target;
+                if (input.tagName === 'INPUT') {
+                    const currentItem = input.closest('.common-ingredient-item');
+                    const inputs = currentItem.querySelectorAll('input');
+                    const nameInput = inputs[0];
+                    const unitInput = inputs[1];
+
+                    // 如果是用量输入框，且内容为空，且光标在开始位置
+                    if (input === unitInput && input.value === '' && input.selectionStart === 0) {
+                        e.preventDefault(); // 阻止默认的退格行为
+                        nameInput.focus(); // 聚焦到食材名称输入框
+                        nameInput.selectionStart = nameInput.value.length; // 将光标移到文本末尾
+                    }
+                }
+            }
+        });
+        
+        // 监听所有输入框的失去焦点事件
+        commonIngredientsList.addEventListener('blur', function(e) {
+            if (e.target.tagName === 'INPUT') {
+                const currentItem = e.target.closest('.common-ingredient-item');
+                const inputs = currentItem.querySelectorAll('input');
+                const nameInput = inputs[0];
+                const unitInput = inputs[1];
+                
+                // 如果不是最后一个项目，且名称为空，则删除该项
+                if (currentItem !== commonIngredientsList.lastElementChild && 
+                    nameInput.value.trim() === '') {
+                    currentItem.remove();
+                }
+            }
+        }, true);
+    }
+
+    // 添加自动调整宽度的JavaScript
+    function adjustInputWidth(input) {
+        const tempSpan = document.createElement('span');
+        tempSpan.style.font = window.getComputedStyle(input).font;
+        tempSpan.style.visibility = 'hidden';
+        tempSpan.style.position = 'absolute';
+        tempSpan.style.whiteSpace = 'pre';
+        document.body.appendChild(tempSpan);
+        
+        tempSpan.textContent = input.value || input.placeholder;
+        const width = tempSpan.offsetWidth;
+        document.body.removeChild(tempSpan);
+        
+        // 增加更多的padding空间，从10px改为20px
+        input.style.width = (width + 20) + 'px';
+    }
+
+    // 导出初始化函数供外部使用
+    window.initializeRecipeModal = initializeModal;
+});
+</script> 

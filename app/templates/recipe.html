@@ -1,0 +1,1128 @@
+{% extends "base.html" %}
+
+{% block title %}{{ recipe.name }} - {{ config.SITE_NAME }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+    <div class="col-md-8">
+            <h1 class="mb-4">
+                <a href="/" style="text-decoration: none; color: inherit;">🍽️ {{ recipe.name }}</a>
+            </h1>
+            <p class="text-muted">
+                📅 创建于 {{ recipe.created_at.strftime('%Y-%m-%d') }}
+                {% if recipe.updated_at and recipe.updated_at != recipe.created_at %}
+                | ✏️ 最后编辑于 {{ recipe.updated_at.strftime('%Y-%m-%d') }}
+                {% endif %}
+            </p>
+        </div>
+        <div class="col-md-4 text-end">
+            <button class="btn btn-primary me-2" onclick="showShareModal()">
+                📤 分享菜谱
+            </button>
+            <button class="btn btn-primary admin-only" onclick="loadRecipeForEdit('{{ recipe.id }}')" style="display: none;">
+                ✏️ 编辑菜谱
+            </button>
+        </div>
+        </div>
+
+    <!-- 分享选项模态窗口 -->
+    <div class="modal fade" id="shareModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">📤 分享菜谱</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">标题设置：</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="shareTitle" checked>
+                            <label class="form-check-label" for="shareTitle">
+                                🏷️ 显示标题
+                            </label>
+                        </div>
+                        <div class="mt-2" id="titleCustomizeArea" style="padding-left: 24px;">
+                            <input type="text" class="form-control form-control-sm mb-2" id="customTitle" placeholder="自定义标题（留空则使用菜名）">
+                            <input type="text" class="form-control form-control-sm" id="customSubtitle" placeholder="自定义副标题" value="我的美味菜谱集">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">选择要包含的内容：</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="shareDescription" checked>
+                            <label class="form-check-label" for="shareDescription">
+                                📝 描述
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="shareIngredients" checked>
+                            <label class="form-check-label" for="shareIngredients">
+                                🥘 食材准备
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="shareSteps" checked>
+                            <label class="form-check-label" for="shareSteps">
+                                📝 制作步骤
+                            </label>
+            </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="shareNotes" checked>
+                            <label class="form-check-label" for="shareNotes">
+                                📒 改进笔记
+                            </label>
+        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="shareFinalImage">
+                            <label class="form-check-label" for="shareFinalImage">
+                                📸 成品图片
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="generateShareImage()">
+                        📸 生成分享图
+            </button>
+                </div>
+        </div>
+    </div>
+</div>
+
+    <!-- 分享预览模态窗口 -->
+    <div class="modal fade" id="sharePreviewModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                    <h5 class="modal-title">📸 分享预览</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                    <div id="sharePreview" class="bg-white p-4">
+                        <!-- 分享内容将在这里动态生成 -->
+                    </div>
+            </div>
+            <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="backToShareOptions()">返回选项</button>
+                    <button type="button" class="btn btn-primary" onclick="downloadShareImage()">
+                        💾 保存图片
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if recipe.description %}
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3>📝 描述</h3>
+            </div>
+            <div class="card">
+                <div class="card-body">
+                    <p class="recipe-description mb-0" style="white-space: pre-wrap;">{{ recipe.description }}</p>
+</div>
+            </div>
+            <div class="video-preview mt-2"></div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3>🥘 食材准备</h3>
+                <div class="btn-group" style="border-radius: 20px; overflow: hidden;">
+                    <button type="button" class="btn btn-sm view-btn view-btn-active" style="border-radius: 20px 0 0 20px !important;" onclick="switchIngredientsView('compact')" title="标签视图">
+                        🏷️
+                    </button>
+                    <button type="button" class="btn btn-sm view-btn" style="border-radius: 0 20px 20px 0 !important;" onclick="switchIngredientsView('table')" title="表格视图">
+                        📋
+                    </button>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-body">
+                    <!-- 紧凑视图 -->
+                    <div id="compactView" style="display: flex; flex-wrap: wrap; gap: 8px;">
+                        {% for ingredient in recipe.ingredients %}
+                        <span class="badge bg-light text-dark border">
+                            🔸 {{ ingredient.name }}
+                            {% if ingredient.amount %} {{ ingredient.amount }}{% endif %}
+                            {% if ingredient.note %}📝{{ ingredient.note }}{% endif %}
+                        </span>
+                        {% endfor %}
+                    </div>
+                    <!-- 表格视图 -->
+                    <div id="tableView" style="display: none;">
+                        <div class="table-responsive">
+                            <table class="table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>🥗 食材</th>
+                                        <th>📏 用量</th>
+                                        <th>📌 备注</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for ingredient in recipe.ingredients %}
+                                    <tr>
+                                        <td>🔸 {{ ingredient.name }}</td>
+                                        <td>{{ ingredient.amount }}</td>
+                                        <td>{% if ingredient.note %}📝 {{ ingredient.note }}{% endif %}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                    </div>
+                    </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3>📝 制作步骤</h3>
+            </div>
+            <div class="mt-3">
+                {% for step in recipe.steps %}
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">✨ 步骤 {{ loop.index }}</h5>
+                        <p class="card-text step-description" style="white-space: pre-wrap;" data-ingredients='{{ recipe.ingredients|map(attribute="name")|list|tojson|safe }}'>{{ step.description }}</p>
+                        {% if step.image_path %}
+                        <img src="{{ url_for('static', filename=step.image_path.replace('\\', '/')) }}" class="img-fluid rounded" alt="步骤图片">
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+        </div>
+    </div>
+</div>
+
+    {% if recipe.notes %}
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3>📒 改进笔记</h3>
+            </div>
+            <div class="mt-3">
+                {% for note in recipe.notes %}
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <small class="text-muted mb-2 d-block">📅 {{ note.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                        <p class="card-text" style="white-space: pre-wrap;">{{ note.content }}</p>
+                        {% if note.image_path %}
+                        <img src="{{ url_for('static', filename=note.image_path.replace('\\', '/')) }}" class="img-fluid rounded" alt="笔记图片">
+                        {% endif %}
+                    </div>
+            </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if recipe.final_images %}
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3>📸 成品图片</h3>
+            </div>
+            <div class="final-images-container" id="finalImagesContainer">
+                {% for image in recipe.final_images|sort(attribute='order') %}
+                <div class="final-image-item mb-3" data-id="{{ image.id }}">
+                    <div class="position-relative">
+                        <img src="{{ url_for('static', filename=image.image_path.replace('\\', '/')) }}" 
+                             class="img-fluid rounded" 
+                             alt="成品图片"
+                             onclick="showOriginalImage(this.src)"
+                             style="cursor: zoom-in;">
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 图片查看模态窗口 -->
+    <div class="modal fade" id="imageViewModal" tabindex="-1">
+        <div class="modal-dialog modal-fullscreen m-0">
+            <div class="modal-content">
+                <div class="modal-body p-0 d-flex align-items-center justify-content-center" style="min-height: 100vh;" onclick="closeImageModal(event)">
+                    <button type="button" class="btn-close btn-close-white position-absolute top-0 end-0 m-4" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn btn-prev" onclick="prevImage(event)">
+                        <i class="fs-1">❮</i>
+                    </button>
+                    <img id="originalImage" class="img-fluid" alt="原图" style="max-height: 100vh; width: auto; object-fit: contain;">
+                    <button type="button" class="btn btn-next" onclick="nextImage(event)">
+                        <i class="fs-1">❯</i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% include 'recipe_edit_modal.html' %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/common_ingredients.js') }}"></script>
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 根据管理模式状态显示/隐藏管理功能
+    function updateAdminElements(isAdmin) {
+        document.querySelectorAll('.admin-only').forEach(el => {
+            el.style.display = isAdmin ? 'inline-block' : 'none';
+        });
+    }
+
+    // 监听管理模式状态变化
+    window.addEventListener('adminModeChanged', function(e) {
+        updateAdminElements(e.detail.isAdmin);
+    });
+
+    // 初始状态更新
+    updateAdminElements(localStorage.getItem('isAdmin') === 'true');
+
+    // 加载菜谱数据进行编辑
+    window.loadRecipeForEdit = function(recipeId) {
+        fetch(`/recipe/${recipeId}/edit`)
+            .then(response => response.json())
+            .then(recipe => {
+                initializeRecipeModal('edit', recipe);
+            })
+            .catch(error => {
+                console.error('加载菜谱数据失败:', error);
+                alert('加载菜谱数据失败，请重试');
+            });
+    };
+
+    // 检查描述中的视频链接
+    const description = document.querySelector('.recipe-description');
+    if (description) {
+        const container = description.closest('.col');
+        handleVideoLink(description.textContent, container);
+    }
+
+    // 高亮步骤中的食材
+    function highlightIngredients() {
+        // 获取所有食材名称（从食材表格的第一列）
+        const ingredients = Array.from(document.querySelectorAll('table tbody tr td:first-child')).map(el => {
+            const name = el.textContent.trim();
+            // 去除emoji和前后空格
+            const cleanName = name.replace(/[\u{1F300}-\u{1F9FF}]|[\u{1F600}-\u{1F64F}]|[\u{1F680}-\u{1F6FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F900}-\u{1F9FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{1F191}-\u{1F251}]|[\u{1F004}]|[\u{1F0CF}]|[\u{1F170}-\u{1F171}]|[\u{1F17E}-\u{1F17F}]|[\u{1F18E}]|[\u{3030}]|[\u{2B50}]|[\u{2B55}]|[\u{2934}-\u{2935}]|[\u{2B05}-\u{2B07}]|[\u{2B1B}-\u{2B1C}]|[\u{3297}]|[\u{3299}]|[\u{303D}]|[\u{00A9}]|[\u{00AE}]|[\u{2122}]/gu, '').trim();
+            return cleanName;
+        }).filter(name => name); // 过滤掉空字符串
+
+        // 获取所有步骤描述
+        const steps = document.querySelectorAll('.step-description');
+        steps.forEach((step, index) => {
+            let content = step.textContent; // 先获取纯文本内容
+
+            // 为每个食材创建高亮，按长度排序以确保先匹配较长的食材名称
+            ingredients.sort((a, b) => b.length - a.length).forEach(ingredient => {
+                if (ingredient) {
+                    // 创建一个正则表达式来匹配食材名称
+                    const regex = new RegExp(ingredient, 'g');
+                    const matches = content.match(regex);
+                    if (matches) {
+                        content = content.replace(regex, `<span class="ingredient-highlight">$&</span>`);
+                    }
+                }
+            });
+
+            step.innerHTML = content;
+        });
+    }
+
+    // 添加高亮样式
+    const style = document.createElement('style');
+    style.textContent = `
+        .ingredient-highlight {
+            background-color: #e3f2fd;
+            border-radius: 3px;
+            padding: 2px 4px;
+            font-weight: bold;
+            color: #1976d2;
+            display: inline-block;
+            line-height: 1.2;
+            margin: 0 2px;
+        }
+        .video-preview {
+            margin: 10px 0;
+        }
+        /* 修改视图切换按钮样式 */
+        .view-btn {
+            color: #ff9999 !important;
+            border: 1px solid #ff9999 !important;
+            background-color: transparent !important;
+            transition: background-color 0.2s ease, color 0.2s ease !important;
+            min-width: 40px;
+            padding: 0.25rem 0.5rem;
+        }
+        .view-btn:hover {
+            color: white !important;
+            background-color: #ff9999 !important;
+        }
+        .view-btn-active {
+            color: white !important;
+            background-color: #ff9999 !important;
+            border-color: #ff9999 !important;
+        }
+        /* 移除按钮组的默认圆角样式 */
+        .btn-group > .btn {
+            border-radius: 0 !important;
+        }
+        .btn-group > .btn:first-child {
+            border-radius: 20px 0 0 20px !important;
+        }
+        .btn-group > .btn:last-child {
+            border-radius: 0 20px 20px 0 !important;
+        }
+    `;
+    document.head.appendChild(style);
+
+    // 页面加载完成后执行高亮
+    highlightIngredients();
+
+    // 统一的链接解析处理函数
+    function handleVideoLink(text, container) {
+        // 如果文本为空，直接返回
+        if (!text || !text.trim()) {
+            return;
+        }
+
+        // 匹配所有URL
+        const urlRegex = /https?:\/\/[^\s]+/g;
+        const urls = text.match(urlRegex);
+        
+        if (urls) {
+            urls.forEach(url => {
+                // 检查是否已经处理过这个链接
+                const existingPreview = container.querySelector(`[data-video-link="${url}"]`);
+                if (existingPreview) {
+                    return;
+                }
+                
+                fetch('/parse_video_url', {
+            method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url: url })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                        const preview = document.createElement('div');
+                        preview.className = 'video-preview mt-2';
+                        preview.setAttribute('data-video-link', url);
+                        
+                        // 根据URL判断平台
+                        let platform = '🔗';
+                        if (url.includes('douyin.com')) {
+                            platform = '🎵';
+                        } else if (url.includes('bilibili.com')) {
+                            platform = '📺';
+                        }
+                        
+                        preview.innerHTML = `
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center">
+                                        <span class="platform-icon me-2">${platform}</span>
+                                        <span class="video-title">${data.data.title}</span>
+                                        <a href="${url}" target="_blank" class="btn btn-sm btn-outline-primary ms-auto">
+                                            查看链接
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        
+                        const previewContainer = container.querySelector('.video-preview');
+                        if (previewContainer) {
+                            previewContainer.innerHTML = preview.innerHTML;
+                        }
+            }
+        });
+    });
+        }
+    }
+
+    // 分享功能相关代码
+    window.showShareModal = function() {
+        const shareModal = new bootstrap.Modal(document.getElementById('shareModal'));
+        // 设置默认标题和副标题
+        document.getElementById('customTitle').value = document.querySelector('h1').textContent.trim();
+        document.getElementById('customSubtitle').value = document.title.split(' - ')[1];
+        shareModal.show();
+    };
+
+    window.backToShareOptions = function() {
+        const sharePreviewModal = bootstrap.Modal.getInstance(document.getElementById('sharePreviewModal'));
+        sharePreviewModal.hide();
+        showShareModal();
+    };
+
+    window.generateShareImage = function() {
+        // 获取选中的选项
+        const includeTitle = document.getElementById('shareTitle').checked;
+        const customTitle = document.getElementById('customTitle').value.trim();
+        const customSubtitle = document.getElementById('customSubtitle').value.trim();
+        const includeDescription = document.getElementById('shareDescription').checked;
+        const includeIngredients = document.getElementById('shareIngredients').checked;
+        const includeSteps = document.getElementById('shareSteps').checked;
+        const includeNotes = document.getElementById('shareNotes').checked;
+        const includeFinalImage = document.getElementById('shareFinalImage').checked;
+
+        console.log('分享选项:', {
+            includeTitle,
+            customTitle,
+            customSubtitle,
+            includeDescription,
+            includeIngredients,
+            includeSteps,
+            includeNotes,
+            includeFinalImage
+        });
+
+        // 创建分享预览内容
+        const sharePreview = document.getElementById('sharePreview');
+        sharePreview.innerHTML = '';
+
+        // 添加标题
+        if (includeTitle) {
+            const titleDiv = document.createElement('div');
+            titleDiv.className = 'mb-4 text-center';
+            titleDiv.innerHTML = `
+                <h2 class="mb-3">${customTitle || document.querySelector('h1').textContent.trim()}</h2>
+                <div class="text-muted small">${customSubtitle}</div>
+            `;
+            sharePreview.appendChild(titleDiv);
+        }
+
+        // 添加成品图片（只在勾选时添加）
+        if (includeFinalImage) {
+            console.log('添加成品图片到预览');
+            const finalImages = document.querySelectorAll('.final-image-item');
+            if (finalImages.length > 0) {
+                const imagesDiv = document.createElement('div');
+                imagesDiv.className = 'mb-4';
+                imagesDiv.innerHTML = `
+                    <h4>📸 成品图片</h4>
+                    <div class="final-images-container" id="sharePreviewImages">
+                        ${Array.from(finalImages).map(item => {
+                            const image = item.querySelector('img');
+                            // 创建一个新的 canvas 元素来存储图片数据
+                            const canvas = document.createElement('canvas');
+                            const ctx = canvas.getContext('2d');
+                            canvas.width = image.naturalWidth;
+                            canvas.height = image.naturalHeight;
+                            ctx.drawImage(image, 0, 0);
+                            // 使用 canvas 的 dataURL 作为图片源
+                            return `
+                                <div class="final-image-item mb-3" data-id="${item.dataset.id}">
+                                    <div class="position-relative">
+                                        <img src="${canvas.toDataURL()}" class="img-fluid rounded" alt="成品图片">
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+                sharePreview.appendChild(imagesDiv);
+
+                // 只在管理模式下初始化分享预览中的图片排序
+                if (localStorage.getItem('isAdmin') === 'true') {
+                    new Sortable(document.getElementById('sharePreviewImages'), {
+                        animation: 150,
+                        ghostClass: 'sortable-ghost',
+                        onEnd: function(evt) {
+                            // 获取新的排序顺序
+                            const newOrder = Array.from(evt.target.children).map((item, index) => ({
+                                id: parseInt(item.dataset.id),
+                                order: index
+                            }));
+                            
+                            // 更新主视图中的图片顺序
+                            const mainContainer = document.getElementById('finalImagesContainer');
+                            if (mainContainer) {
+                                newOrder.forEach(({id}) => {
+                                    const item = mainContainer.querySelector(`[data-id="${id}"]`);
+                                    if (item) mainContainer.appendChild(item);
+                                });
+                            }
+                            
+                            // 发送排序请求到服务器
+                            fetch(`/recipe/{{ recipe.id }}/final_images/reorder`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify(newOrder)
+                            });
+                        }
+                    });
+                }
+            }
+        } else {
+            console.log('跳过添加成品图片');
+        }
+
+        // 添加描述
+        if (includeDescription) {
+            const description = document.querySelector('.recipe-description');
+            if (description && description.textContent.trim()) {
+                const descDiv = document.createElement('div');
+                descDiv.className = 'mb-4';
+                descDiv.innerHTML = `
+                    <h4>📝 描述</h4>
+                    <p style="white-space: pre-wrap;">${description.textContent}</p>
+                `;
+                sharePreview.appendChild(descDiv);
+            }
+        }
+
+        // 添加食材
+        if (includeIngredients) {
+            const ingredients = Array.from(document.querySelectorAll('table tbody tr')).map(row => {
+                const name = row.cells[0].textContent.trim();
+                const amount = row.cells[1].textContent.trim();
+                const note = row.cells[2].textContent.trim();
+                return { name, amount, note };
+            });
+
+            if (ingredients.length > 0) {
+                const ingredientsDiv = document.createElement('div');
+                ingredientsDiv.className = 'mb-4';
+                ingredientsDiv.innerHTML = `
+                    <h4>🥘 食材准备</h4>
+                    <div class="card">
+                        <div class="card-body">
+                            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                                ${ingredients.map(ing => {
+                                    let text = `🔸 ${ing.name.replace('🔸', '').trim()}`;
+                                    if (ing.amount) text += ` ${ing.amount}`;
+                                    if (ing.note) text += ` 📝${ing.note.replace('📝', '').trim()}`;
+                                    return `<span class="badge bg-light text-dark border">${text}</span>`;
+                                }).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                sharePreview.appendChild(ingredientsDiv);
+            }
+        }
+
+        // 添加步骤
+        if (includeSteps) {
+            const steps = Array.from(document.querySelectorAll('.step-description')).map((step, index) => {
+                return `
+                    <div class="card mb-2" style="border-left: 3px solid #ffb6c1; border-radius: 4px;">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="step-number me-2" style="width: 24px; height: 24px; background-color: #ffb6c1; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">
+                                    ${index + 1}
+                                </div>
+                                <p class="mb-0" style="white-space: pre-wrap;">${step.innerHTML}</p>
+                            </div>
+                            ${step.image_path ? `<img src="${step.image_path}" class="img-fluid mt-2" style="max-height: 200px; object-fit: contain;">` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            if (steps) {
+                const stepsDiv = document.createElement('div');
+                stepsDiv.className = 'mb-4';
+                stepsDiv.innerHTML = `
+                    <h4>📝 制作步骤</h4>
+                    ${steps}
+                `;
+                sharePreview.appendChild(stepsDiv);
+            }
+        }
+
+        // 添加笔记
+        if (includeNotes) {
+            const notes = Array.from(document.querySelectorAll('.row .card:has(.card-text)')).map(note => {
+                if (!note.closest('.row').querySelector('h3')?.textContent.includes('改进笔记')) {
+                    return null;
+                }
+                const content = note.querySelector('.card-text').textContent;
+                const date = note.querySelector('.text-muted').textContent;
+                return `
+                    <div class="card mb-2" style="border-left: 3px solid #b6c1ff; border-radius: 4px;">
+                        <div class="card-body py-2">
+                            <small class="text-muted d-block mb-1">${date}</small>
+                            <p class="card-text mb-0" style="white-space: pre-wrap;">${content}</p>
+                        </div>
+                    </div>
+                `;
+            }).filter(Boolean).join('');
+
+            if (notes) {
+                const notesDiv = document.createElement('div');
+                notesDiv.className = 'mb-4';
+                notesDiv.innerHTML = `
+                    <h4>📒 改进笔记</h4>
+                    ${notes}
+                `;
+                sharePreview.appendChild(notesDiv);
+            }
+        }
+
+        // 添加水印
+        const watermark = document.createElement('div');
+        watermark.className = 'text-center text-muted mt-3 pt-2 border-top';
+        watermark.innerHTML = `
+            <small>CookDay - ${new Date().toLocaleDateString('zh-CN')}</small>
+        `;
+        sharePreview.appendChild(watermark);
+
+        // 隐藏分享选项模态窗口，显示预览模态窗口
+        const shareModal = bootstrap.Modal.getInstance(document.getElementById('shareModal'));
+        shareModal.hide();
+        const sharePreviewModal = new bootstrap.Modal(document.getElementById('sharePreviewModal'));
+        sharePreviewModal.show();
+    };
+
+    window.downloadShareImage = function() {
+        const sharePreview = document.getElementById('sharePreview');
+        const includeFinalImage = document.getElementById('shareFinalImage').checked;
+        
+        console.log('开始生成分享图片');
+        console.log('是否包含成品图片:', includeFinalImage);
+        console.log('预览内容中的图片数量:', sharePreview.getElementsByTagName('img').length);
+        
+        // 添加加载提示
+        const loadingToast = document.createElement('div');
+        loadingToast.className = 'position-fixed top-50 start-50 translate-middle bg-dark text-white p-3 rounded';
+        loadingToast.style.zIndex = '9999';
+        loadingToast.textContent = '📸 正在生成图片...';
+        document.body.appendChild(loadingToast);
+
+        // 复制所有必要的样式
+        const styleSheet = document.createElement('style');
+        styleSheet.textContent = `
+            /* Bootstrap 核心样式 */
+            .card {
+                position: relative;
+                display: flex;
+                flex-direction: column;
+                min-width: 0;
+                word-wrap: break-word;
+                background-color: #fff;
+                background-clip: border-box;
+                border: 1px solid rgba(0,0,0,.125);
+                border-radius: 4px;
+                margin-bottom: 1rem;
+            }
+            .card-body {
+                flex: 1 1 auto;
+                padding: 1rem;
+            }
+            .card-title {
+                margin-bottom: 0.5rem;
+                font-size: 1.25rem;
+            }
+            .card-text {
+                margin-bottom: 0;
+            }
+            .table {
+                width: 100%;
+                margin-bottom: 1rem;
+                color: #212529;
+                border-collapse: collapse;
+            }
+            .table th,
+            .table td {
+                padding: 0.75rem;
+                vertical-align: top;
+                border-top: 1px solid #dee2e6;
+            }
+            .table thead th {
+                vertical-align: bottom;
+                border-bottom: 2px solid #dee2e6;
+            }
+            .text-muted {
+                color: #6c757d !important;
+            }
+            .mb-2 { margin-bottom: 0.5rem !important; }
+            .mb-3 { margin-bottom: 1rem !important; }
+            .mb-4 { margin-bottom: 1.5rem !important; }
+            .mt-4 { margin-top: 1.5rem !important; }
+            .p-4 { padding: 1.5rem !important; }
+            .pt-2 { padding-top: 0.5rem !important; }
+            .text-center { text-align: center !important; }
+            .border-top { border-top: 1px solid #dee2e6 !important; }
+            .rounded { border-radius: 0.25rem !important; }
+            .img-fluid { max-width: 100%; height: auto; }
+            
+            /* 自定义样式 */
+            .ingredient-highlight {
+                background-color: #e3f2fd;
+                border-radius: 3px;
+                padding: 2px 4px;
+                font-weight: bold;
+                color: #1976d2;
+                display: inline-block;
+                line-height: 1.2;
+                margin: 0 2px;
+            }
+            h2 { font-size: 2rem; margin-bottom: 1rem; }
+            h4 { font-size: 1.5rem; margin-bottom: 1rem; }
+            small { font-size: 0.875rem; }
+            .table-responsive { overflow-x: auto; }
+            
+            /* 分享图片特定样式 */
+            #sharePreview {
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+                color: #333;
+                line-height: 1.5;
+                max-width: 800px;
+                margin: 0 auto;
+                padding: 1rem !important;
+            }
+            #sharePreview .mb-4 {
+                margin-bottom: 1rem !important;
+            }
+            #sharePreview h2 {
+                font-size: 1.5rem;
+                margin-bottom: 0.5rem;
+            }
+            #sharePreview h4 {
+                font-size: 1.2rem;
+                margin-bottom: 0.5rem;
+                margin-top: 0.5rem;
+            }
+            #sharePreview .card {
+                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+                margin-bottom: 0.5rem;
+            }
+            #sharePreview .card-body {
+                padding: 0.5rem;
+            }
+            #sharePreview img {
+                max-height: 250px;
+                object-fit: cover;
+                margin: 0.5rem auto;
+                display: block;
+            }
+            #sharePreview .badge {
+                font-size: 0.9rem;
+                font-weight: normal;
+            }
+            #sharePreview p {
+                margin-bottom: 0;
+            }
+            #sharePreview .watermark {
+                font-size: 0.8rem;
+                color: #6c757d;
+                text-align: center;
+                padding-top: 0.5rem;
+                margin-top: 0.5rem;
+                border-top: 1px solid #dee2e6;
+            }
+            #sharePreview .text-muted {
+                font-size: 0.8rem;
+            }
+        `;
+        
+        // 克隆预览内容并应用样式
+        html2canvas(sharePreview, {
+            scale: 2,  // 提高清晰度
+            useCORS: includeFinalImage,  // 只在需要加载图片时启用跨域
+            backgroundColor: '#ffffff',  // 设置白色背景
+            scrollY: -window.scrollY,  // 修复滚动问题
+            ignoreElements: (element) => {
+                // 如果不包含成品图片，忽略所有 img 元素
+                return !includeFinalImage && element.tagName === 'IMG';
+            },
+            onclone: function(clonedDoc) {
+                console.log('克隆预览内容');
+                const clonedPreview = clonedDoc.getElementById('sharePreview');
+                console.log('克隆后的图片数量:', clonedPreview.getElementsByTagName('img').length);
+                
+                // 添加样式到克隆的文档
+                clonedDoc.head.appendChild(styleSheet);
+                
+                // 确保克隆的元素样式正确
+                clonedPreview.style.width = sharePreview.offsetWidth + 'px';
+                clonedPreview.style.padding = '1rem';
+                
+                // 调整所有卡片的内边距
+                clonedPreview.querySelectorAll('.card-body').forEach(cardBody => {
+                    cardBody.style.padding = '0.5rem';
+                });
+                
+                // 调整所有标题的边距
+                clonedPreview.querySelectorAll('h4').forEach(h4 => {
+                    h4.style.marginBottom = '0.5rem';
+                    h4.style.marginTop = '0.5rem';
+                });
+                
+                // 调整所有段落的边距
+                clonedPreview.querySelectorAll('p').forEach(p => {
+                    p.style.marginBottom = '0';
+                });
+                
+                // 确保所有图片都已加载（只在勾选了成品图片时）
+                if (includeFinalImage) {
+                    console.log('等待图片加载...');
+                    const images = clonedPreview.getElementsByTagName('img');
+                    return new Promise(resolve => {
+                        if (images.length === 0) {
+                            console.log('没有需要加载的图片');
+                            resolve();
+                        }
+                        let loadedImages = 0;
+                        for (let img of images) {
+                            if (img.complete) {
+                                loadedImages++;
+                                console.log(`图片已加载完成: ${loadedImages}/${images.length}`);
+                                if (loadedImages === images.length) resolve();
+                            } else {
+                                img.onload = () => {
+                                    loadedImages++;
+                                    console.log(`图片加载完成: ${loadedImages}/${images.length}`);
+                                    if (loadedImages === images.length) resolve();
+                                };
+                                img.onerror = () => {
+                                    loadedImages++;
+                                    console.error('图片加载失败');
+                                    if (loadedImages === images.length) resolve();
+                                };
+                            }
+                        }
+                    });
+                } else {
+                    console.log('不需要等待图片加载');
+                }
+            }
+        }).then(canvas => {
+            console.log('图片生成完成');
+            // 移除加载提示
+            document.body.removeChild(loadingToast);
+
+            // 转换为图片并下载
+            const link = document.createElement('a');
+            link.download = `菜谱_${document.querySelector('h1').textContent.trim()}_${new Date().toLocaleDateString('zh-CN')}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }).catch(error => {
+            console.error('生成图片失败:', error);
+            alert('生成图片失败，请重试');
+            document.body.removeChild(loadingToast);
+        });
+    };
+
+    // 添加视图切换功能
+    window.switchIngredientsView = function(view) {
+        const compactView = document.getElementById('compactView');
+        const tableView = document.getElementById('tableView');
+        const [compactBtn, tableBtn] = document.querySelectorAll('.btn-group .btn');
+        
+        if (view === 'compact') {
+            compactView.style.display = 'flex';
+            tableView.style.display = 'none';
+            compactBtn.classList.add('view-btn-active');
+            compactBtn.classList.remove('active');
+            tableBtn.classList.remove('view-btn-active', 'active');
+            // 保存用户偏好
+            localStorage.setItem('ingredientsView', 'compact');
+        } else {
+            compactView.style.display = 'none';
+            tableView.style.display = 'block';
+            tableBtn.classList.add('view-btn-active');
+            tableBtn.classList.remove('active');
+            compactBtn.classList.remove('view-btn-active', 'active');
+            // 保存用户偏好
+            localStorage.setItem('ingredientsView', 'table');
+        }
+    };
+
+    // 页面加载时恢复用户的视图偏好
+    document.addEventListener('DOMContentLoaded', function() {
+        const savedView = localStorage.getItem('ingredientsView') || 'compact';
+        switchIngredientsView(savedView);
+    });
+
+    // 当前显示的图片索引
+    let currentImageIndex = 0;
+    let allImages = [];
+
+    // 添加查看原图功能
+    window.showOriginalImage = function(imageSrc) {
+        const modal = new bootstrap.Modal(document.getElementById('imageViewModal'));
+        // 获取所有图片
+        allImages = Array.from(document.querySelectorAll('.final-image-item img')).map(img => img.src);
+        // 找到当前图片的索引
+        currentImageIndex = allImages.indexOf(imageSrc);
+        document.getElementById('originalImage').src = imageSrc;
+        modal.show();
+    };
+
+    // 添加点击关闭功能
+    window.closeImageModal = function(event) {
+        if (event.target.classList.contains('modal-body')) {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('imageViewModal'));
+            if (modal) modal.hide();
+        }
+    };
+
+    // 上一张图片
+    window.prevImage = function(event) {
+        event.stopPropagation();
+        if (currentImageIndex > 0) {
+            currentImageIndex--;
+            document.getElementById('originalImage').src = allImages[currentImageIndex];
+        }
+    };
+
+    // 下一张图片
+    window.nextImage = function(event) {
+        event.stopPropagation();
+        if (currentImageIndex < allImages.length - 1) {
+            currentImageIndex++;
+            document.getElementById('originalImage').src = allImages[currentImageIndex];
+        }
+    };
+
+    // 添加键盘事件监听
+    document.addEventListener('keydown', function(event) {
+        const modal = document.getElementById('imageViewModal');
+        if (modal.classList.contains('show')) {
+            if (event.key === 'ArrowLeft') {
+                prevImage(event);
+            } else if (event.key === 'ArrowRight') {
+                nextImage(event);
+            } else if (event.key === 'Escape') {
+                const modalInstance = bootstrap.Modal.getInstance(modal);
+                if (modalInstance) modalInstance.hide();
+            }
+        }
+    });
+
+    // 初始化成品图片的拖拽排序
+    const finalImagesContainer = document.getElementById('finalImagesContainer');
+    if (finalImagesContainer) {
+        // 只在管理模式下启用排序
+        if (localStorage.getItem('isAdmin') === 'true') {
+            new Sortable(finalImagesContainer, {
+                animation: 150,
+                ghostClass: 'sortable-ghost',
+                onEnd: function() {
+                    const newOrder = Array.from(finalImagesContainer.children).map((item, index) => ({
+                        id: parseInt(item.dataset.id),
+                        order: index
+                    }));
+                    
+                    fetch(`/recipe/{{ recipe.id }}/final_images/reorder`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(newOrder)
+                    });
+                }
+            });
+        }
+    }
+});
+</script>
+
+<style>
+/* 覆盖表格默认边框样式 */
+.table>:not(:first-child) {
+    border-top: 1px solid rgb(222, 226, 230);
+}
+
+.final-images-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.final-image-item {
+    cursor: move;
+}
+
+.final-image-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.sortable-ghost {
+    opacity: 0.5;
+}
+
+/* 修改图片查看相关样式 */
+#imageViewModal .modal-content {
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+#imageViewModal .modal-dialog {
+    max-width: 100%;
+    margin: 0;
+}
+
+#imageViewModal .modal-body {
+    padding: 0;
+    background-color: rgba(0, 0, 0, 0.3);
+    cursor: zoom-out;
+}
+
+#originalImage {
+    max-height: 100vh;
+    max-width: 100vw;
+    object-fit: contain;
+    cursor: default;
+}
+
+.btn-close-white {
+    filter: invert(1) grayscale(100%) brightness(200%);
+    z-index: 1050;
+}
+
+/* 添加切换按钮样式 */
+.btn-prev, .btn-next {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 2rem;
+    padding: 1rem;
+    cursor: pointer;
+    transition: color 0.2s;
+    z-index: 1050;
+}
+
+.btn-prev:hover, .btn-next:hover {
+    color: white;
+}
+
+.btn-prev {
+    left: 1rem;
+}
+
+.btn-next {
+    right: 1rem;
+}
+</style>
+{% endblock %} 

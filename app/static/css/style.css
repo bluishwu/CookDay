@@ -1,0 +1,233 @@
+/* 全局样式 */
+body {
+    background-color: #fff5f5;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* 卡片样式 */
+.card {
+    border-radius: 15px;
+    border: none;
+    box-shadow: 0 4px 8px rgba(255,153,153,0.1);
+    transition: transform 0.3s, box-shadow 0.3s;
+    background-color: white;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(255,153,153,0.2);
+}
+
+.recipe-card .card-img-top {
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+    height: 200px;
+    object-fit: cover;
+}
+
+/* 图片样式 */
+.img-fluid {
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.step-image {
+    max-height: 300px;
+    object-fit: cover;
+}
+
+/* 步骤列表样式 */
+.step-item {
+    background: white;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    border-left: 3px solid #ff9999;
+}
+
+.step-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.step-actions {
+    display: flex;
+    gap: 5px;
+}
+
+/* 食材列表样式 */
+.ingredients-list {
+    background-color: white;
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.ingredient-item {
+    padding: 8px;
+    border-bottom: 1px dashed #ffe6e6;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.ingredient-name {
+    font-weight: 600;
+    color: #ff6666;
+}
+
+.ingredient-amount {
+    color: #666;
+    background-color: #fff5f5;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.9em;
+}
+
+/* 笔记列表样式 */
+.note-item {
+    background: white;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* 表单样式 */
+.form-control {
+    border-radius: 10px;
+    border: 2px solid #ffe6e6;
+}
+
+.form-control:focus {
+    border-color: #ff9999;
+    box-shadow: 0 0 0 0.2rem rgba(255,153,153,.25);
+}
+
+/* 按钮样式 */
+.btn-primary {
+    background-color: #ff9999;
+    border-color: #ff9999;
+    border-radius: 20px;
+    padding: 8px 20px;
+    font-weight: 600;
+}
+
+.btn-primary:hover {
+    background-color: #ff8080;
+    border-color: #ff8080;
+}
+
+.btn-outline-primary {
+    color: #ff9999;
+    border-color: #ff9999;
+    border-radius: 20px;
+}
+
+.btn-outline-primary:hover {
+    background-color: #ff9999;
+    border-color: #ff9999;
+    color: white;
+}
+
+/* 导航栏样式 */
+.navbar {
+    background-color: #ff9999 !important;
+    box-shadow: 0 2px 4px rgba(255,153,153,0.2);
+}
+
+.navbar-brand, .nav-link {
+    color: white !important;
+    font-weight: 600;
+}
+
+/* 页面标题样式 */
+h1 {
+    color: #ff6666;
+    font-weight: 600;
+}
+
+h5 {
+    color: #000000;
+    font-weight: 600;
+}
+
+/* 提示信息样式 */
+.alert {
+    border-radius: 10px;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* 模态窗口样式 */
+.modal-content {
+    border-radius: 15px;
+    border: none;
+}
+
+.modal-header {
+    background-color: #ff9999;
+    color: white;
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+}
+
+.modal-title {
+    color: white;
+}
+
+/* 常用食材按钮样式 */
+.common-ingredients-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: 10px;
+}
+
+.common-ingredients-list .btn {
+    font-size: 0.9em;
+    padding: 4px 12px;
+}
+
+/* 食材建议列表样式 */
+.ingredients-suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 5px;
+}
+
+.ingredients-suggestions .btn {
+    font-size: 0.9em;
+    padding: 2px 8px;
+}
+
+/* 动画效果 */
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-5px); }
+    100% { transform: translateY(0px); }
+}
+
+.recipe-card {
+    animation: float 3s ease-in-out infinite;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .step-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .step-actions {
+        margin-top: 10px;
+    }
+    
+    .ingredient-item {
+        align-items: flex-start;
+    }
+} 
