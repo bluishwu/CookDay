@@ -21,7 +21,7 @@
 1. 克隆仓库
 ```bash
 git clone https://github.com/bluishwu/CookDay
-cd CookDay-main
+cd CookDay
 ```
 
 2. 安装依赖
