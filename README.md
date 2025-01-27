@@ -2,7 +2,7 @@
 
 一款食谱记录程序，轻松记录食材、步骤和笔记，易于分享与管理。
 记录您的每日烹饪，将其化为可回顾与共享的经验宝藏！  
-Demo: https://cookday.bluish.net
+Demo: https://cookday.bluish.net  
 ![界面预览](preview.png)
 
 ## ✨ 功能特色
