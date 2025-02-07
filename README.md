@@ -7,14 +7,14 @@ A recipe recording program that allows you to effortlessly document ingredients,
     <a href="https://cookday.bluish.net" rel="nofollow"><img src="https://img.shields.io/badge/CookDay-在线演示-blue" alt="在线演示" style="max-width: 100%;"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-yellow" alt="MIT License" style="max-width: 100%;"></a>
 </p>
-<div style="display: flex; justify-content: center; align-items: flex-start; padding: 10px; border-radius: 10px; width: fit-content; margin: 0 auto;">
+<p dir="auto" align="center">
   <a href="recipe.png" target="_blank">
     <img src="recipe.png" alt="Image 1" style="height: 300px; width: auto; margin-right: 10px; border-radius: 5px; box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);">
   </a>
   <a href="recipe_edit.png" target="_blank">
     <img src="recipe_edit.png" alt="Image 2" style="height: 300px; width: auto; object-fit: contain; border-radius: 2px; box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);">
   </a>
-</div>
+</p>
 
 ## ✨ 功能特色
 
