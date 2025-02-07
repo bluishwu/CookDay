@@ -2,6 +2,11 @@
 
 一款食谱记录程序，轻松记录食材、步骤和笔记，易于分享与管理。
 记录您的每日烹饪，将其化为可回顾与共享的经验宝藏！
+A recipe recording program that allows you to effortlessly document ingredients, steps, and notes, with easy sharing and management. Capture your daily cooking and turn it into a treasure trove of revisitable and shareable experiences!
+<p dir="auto" align="center">
+    <a href="https://cookday.bluish.net" rel="nofollow"><img src="https://img.shields.io/badge/CookDay-在线演示-blue?logo=internet-explorer&logoColor=white" alt="在线演示" style="max-width: 100%;"></a>
+    <a href="preview.png"><img src="https://img.shields.io/badge/CookDay-界面预览-green?logo=image&logoColor=white" alt="界面预览" style="max-width: 100%;"></a>
+</p>
 
 ## ✨ 功能特色
 
@@ -10,6 +15,7 @@
 * 📝 制作步骤记录
 * 📒 改进笔记记录
 * 📷 成品图片上传
+* 🎁 图片生成分享
 * ⚙️ 管理模式登入
 * 🔗 URL链接解析
 * 🔎 常用食材快速选择
